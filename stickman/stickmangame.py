@@ -42,51 +42,52 @@ class Coords:
         self.x2 = x2
         self.y2 = y2
         
-    def within_x(co1, co2):
-        if co1.x1 > co2.x1 and co1.x1 < co2.x2:
-            return True
-        elif co1.x2 > co2.x1 and co1.x2 < co2.x2:
-            return True
-        elif co2.x1 > co1.x1 and co2.x1 < co2.x2:
-            return True
-        elif co2.x2 > co1.x1 and co2.x2 < co1.x2:
-            return True
-        else:
-            return False
+def within_x(co1, co2):
+    if co1.x1 > co2.x1 and co1.x1 < co2.x2:
+        return True
+    elif co1.x2 > co2.x1 and co1.x2 < co2.x2:
+        return True
+    elif co2.x1 > co1.x1 and co2.x1 < co2.x2:
+        return True
+    elif co2.x2 > co1.x1 and co2.x2 < co1.x2:
+        return True
+    else:
+        return False
         
-    def within_y(co1, co2):
-        if (co1.y1 > co2.y1 and co1.y1 < co2.y2) \
-                or (co1.y2 > co2.y1 and co1.y2 < co2.y2) \
-                or (co2.y1 > co1.y1 and co2.y1 < co1.y2) \
-                or (co2.y2 > co1.y1 and co2.y2 < co1.y2):
+def within_y(co1, co2):
+    if (co1.y1 > co2.y1 and co1.y1 < co2.y2) \
+            or (co1.y2 > co2.y1 and co1.y2 < co2.y2) \
+            or (co2.y1 > co1.y1 and co2.y1 < co1.y2) \
+            or (co2.y2 > co1.y1 and co2.y2 < co1.y2):
+        return True
+    else:
+        return False
+
+
+def collided_left(co1, co2):
+    if within_y(co1, co2):
+        if co1.x1 <= co2.x2 and co1.x1 >= co2.x1:
             return True
-        else:
-            return False
+    return False
 
-    def collided_left(co1, co2):
-        if within_y(co1, co2):
-            if co1.x1 <= co2.x2 and co1.x1 >= co2.x1:
-                return True
-        return False
+def collided_right(co1, co2):
+    if within_y(co1, co2):
+        if co1.x2 <= co2.x1 and co1.x2 <= co2.x2:
+            return True
+    return False
 
-    def collided_right(co1, co2):
-        if within_y(co1, co2):
-            if co1.x2 <= co2.x1 and co1.x2 <= co2.x2:
-                return True
-        return False
+def collided_top(co1, co2):
+    if within_x(co1, co2):
+        if co1.y1 <= co2.y2 and co1.y1 >= co2.y1:
+            return True
+    return False
 
-    def collided_top(co1, co2):
-        if within_x(co1, co2):
-            if co1.y1 <= co2.y2 and co1.y1 >= co2.y1:
-                return True
-        return False
-
-    def collided_bottom(y, co1, co2):
-        if within_x(co1, co2):
-            y_calc = co1.y2 + y
-            if y_calc >= co2.y1 and y_calc <= co2.y2:
-                return True
-        return False
+def collided_bottom (y, co1, co2):
+    if within_x(co1, co2):
+        y_calc = co1.y2 + y
+        if y_calc >= co2.y1 and y_calc <= co2.y2:
+            return True
+    return False
 
 class Sprite:
     def __init__(self, game):
@@ -169,8 +170,8 @@ class StickFigureSprite(Sprite):
                 self.game.canvas.itemconfig(self.image,
                         image=self.images_right[self.current_image])
 
-    def Coords(self):
-        xy = self.game.canvas.Coords(self.image)
+    def coords(self):
+        xy = self.game.canvas.coords(self.image)
         self.coordinates.x1 = xy[0]
         self.coordinates.y1 = xy[1]
         self.coordinates.x2 = xy[0] + 27
@@ -197,40 +198,40 @@ class StickFigureSprite(Sprite):
         elif self.y < 0 and co.y1 <= 0:
             self.y = 0
             top = False
-            if self.x > 0 and co.x2 >= self.game.canvas_width:
-                self.x = 0
-                right = False
-            elif self.x < 0 and co.x1 <= 0:
+        if self.x > 0 and co.x2 >= self.game.canvas_width:
+            self.x = 0
+            right = False
+        elif self.x < 0 and co.x1 <= 0:
+            self.x = 0
+            left = False
+        for sprite in self.game.sprites:
+            if sprite == self:
+                continue
+            sprite_co = sprite.coords()
+            if top and self.y < 0 and collided_top(co, sprite_co):
+                self.y = -self.y
+                top = False
+            if bottom and self.y > 0 and collided_bottom(self.y,
+                    co, sprite_co):
+                self.y = sprite_co.y1 - co.y2
+                if self.y < 0:
+                    self.y = 0
+                bottom = False
+                top = False
+            if bottom and falling and self.y == 0 \
+                    and co.y2 < self.game.canvas_height \
+                    and collided_bottom(1, co, sprite_co):
+                falling = False
+            if left and self.x < 0 and collided_left(co, sprite_co):
                 self.x = 0
                 left = False
-            for sprite in self.game.sprites:
-                if sprite == self:
-                    continue
-                sprite_co = sprite.coords()
-                if top and self.y < 0 and collided_top(co, sprite_co):
-                    self.y = -self.y
-                    top = False
-                if bottom and self.y > 0 and collided_bottom(self.y,
-                        co, sprite_co):
-                    self.y = sprite_co.y1 - co.y2
-                    if self.y < 0:
-                        self.y = 0
-                    bottom = False
-                    top = False
-                if bottom and falling and self.y == 0 \
-                        and co.y2 < self.game.canvas_height \
-                        and collided_bottom(1, co, sprite_co):
-                    falling = False
-                if left and self.x < 0 and collided_left(co, sprite_co):
-                    self.x = 0
-                    left = False
-                if right and self.x > 0 and collided_right(co, sprite_co):
-                    self.x = 0
-                    right = False
-            if falling and bottom and self.y == 0 \
-                   and co.y2 < self.game.canvas_height:
-                self.y = 4
-            self.game.canvas.move(self.image, self.x, self.y)
+            if right and self.x > 0 and collided_right(co, sprite_co):
+                self.x = 0
+                right = False
+        if falling and bottom and self.y == 0 \
+               and co.y2 < self.game.canvas_height:
+            self.y = 4
+        self.game.canvas.move(self.image, self.x, self.y)
 
 
 g = Game()
