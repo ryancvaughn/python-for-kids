@@ -11,7 +11,7 @@ class Game:
         self.canvas = Canvas(self.tk, width=500, height=500, \
                 highlightthickness = 0)
         self.canvas.pack()
-         self.tk.update()
+        self.tk.update()
         self.canvas_height = 500
         self.canvas_width = 500
         self.bg = PhotoImage(file="backround.gif")
